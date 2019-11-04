@@ -1,4 +1,4 @@
-module github.com/soloworks.co.uk/go-nuget-utils
+module github.com/soloworks/go-nuget-utils
 
 go 1.13
 
