@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"strings"
 
 	nuspec "github.com/soloworks/go-nuspec"
 )
@@ -16,6 +17,12 @@ func PackNupkg(ns *nuspec.NuSpec, basePath string, outputPath string) ([]byte, e
 
 	// Assume filename from ID
 	nsfilename := ns.Meta.ID + ".nuspec"
+
+	// Fix file references to match current underlying os
+	for x, f := range ns.Files.File {
+		ns.Files.File[x].Source = strings.ReplaceAll(f.Source, `\`, string(os.PathSeparator))
+		ns.Files.File[x].Target = strings.ReplaceAll(f.Target, `\`, string(os.PathSeparator))
+	}
 
 	// Create a buffer to write our archive to.
 	buf := new(bytes.Buffer)
@@ -73,8 +80,9 @@ func PackNupkg(ns *nuspec.NuSpec, basePath string, outputPath string) ([]byte, e
 	} else {
 		// For each of the specified globs, get files an put in target
 		for _, f := range ns.Files.File {
-			// Apply glob, cater for
-			matches, err := filepath.Glob(filepath.ToSlash(filepath.Join(basePath, f.Source)))
+			// Apply glob
+			// ToDo: Fix Source from Windows to Current via os.seperator and strings replace
+			matches, err := filepath.Glob(filepath.Join(basePath, f.Source))
 			if err != nil {
 				return nil, err
 			}
@@ -165,7 +173,7 @@ func PackNupkg(ns *nuspec.NuSpec, basePath string, outputPath string) ([]byte, e
 func archiveFile(fn string, w *zip.Writer, b []byte) error {
 
 	// Create the file in the zip
-	f, err := w.Create(filepath.ToSlash(fn))
+	f, err := w.Create(fn)
 	if err != nil {
 		return err
 	}
